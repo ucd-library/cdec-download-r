@@ -49,11 +49,11 @@ dailyCsvData <- function(file, stationId) {
   orgData <- read_csv(file)
   agData <- orgData %>%
     rename(date = "DATE TIME", value = "VALUE", measurement_unit = "UNITS") %>%
-    filter(value != "---") %>%
+    filter( !is.na(as.numeric(value)) ) %>%
     mutate(date = as.Date(date, "%Y%m%d")) %>%
     select(date, value, measurement_unit)  %>%
     group_by(date, measurement_unit) %>%
-    summarize(value = mean(value, na.rm = TRUE)) %>%
+    summarize(value = mean(as.numeric(value))) %>%
     add_column(data_source = "cdec") %>%
     add_column(station_name = stationId) %>%
     add_column(measurement_name = "flow") %>%
@@ -97,13 +97,14 @@ downloadYear <- function(info) {
   dailyCsvData(filepath, info$Stations)
 }
 
+
 for( station in stations ) {
   end <- as.Date(station$End)
   startYear <- format(as.Date(station$Start), "%Y")
 
   currentDate <- as.Date(paste(startYear,"01","01",sep="-"))
   currentEndDate <- currentDate %m+% years(1)
-  
+
   while( currentDate <= end ) {
     downloadYear(hash(
       Stations=station$Stations,
@@ -116,5 +117,6 @@ for( station in stations ) {
     currentEndDate <- currentDate %m+% years(1)
   }
 }
+
 
 
